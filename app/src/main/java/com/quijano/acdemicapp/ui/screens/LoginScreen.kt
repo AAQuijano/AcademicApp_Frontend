@@ -1,26 +1,41 @@
 package com.quijano.acdemicapp.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.launch
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.quijano.acdemicapp.network.ApiService
-import com.quijano.acdemicapp.network.LoginRequest
+import com.quijano.acdemicapp.viewmodel.AuthViewModel
+import com.quijano.acdemicapp.viewmodel.ViewModelFactory
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
     onLoginSuccess: (String) -> Unit,
     onNavigateToRegister: () -> Unit
 ) {
-    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val factory = remember {
+        ViewModelFactory(
+            context = context,
+            apiService = ApiService,
+            userId = "",
+            role = ""
+        )
+    }
+    val viewModel: AuthViewModel = viewModel(factory = factory)
+    val loginState by viewModel.loginState.collectAsState()
+
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    var isLoading by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier
@@ -53,31 +68,18 @@ fun LoginScreen(
 
         Button(
             onClick = {
-                if (username.isBlank() || password.isBlank()) {
-                    errorMessage = "Usuario y contraseña son requeridos"
-                    return@Button
-                }
-                isLoading = true
-                coroutineScope.launch {
-                    try {
-                        val response = ApiService.login(LoginRequest(username, password))
-                        if (response.access_token.isNotBlank()) {
-                            onLoginSuccess(response.access_token)
-                        } else {
-                            errorMessage = "Token inválido en la respuesta del servidor"
-                        }
-                    } catch (e: Exception) {
-                        errorMessage = "Error al iniciar sesión: ${e.message}"
-                    } finally {
-                        isLoading = false
-                    }
+                if (username.isNotBlank() && password.isNotBlank()) {
+                    viewModel.login(username, password)
                 }
             },
             modifier = Modifier.fillMaxWidth(),
-            enabled = !isLoading
+            enabled = loginState !is AuthViewModel.LoginState.Loading
         ) {
-            if (isLoading) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary)
+            if (loginState is AuthViewModel.LoginState.Loading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
             } else {
                 Text("Entrar")
             }
@@ -89,13 +91,22 @@ fun LoginScreen(
             Text("¿No tienes cuenta? Regístrate")
         }
 
-        errorMessage?.let {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = it,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall
-            )
+        when (val state = loginState) {
+            is AuthViewModel.LoginState.Error -> {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Error, contentDescription = "Error", tint = MaterialTheme.colorScheme.error)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(state.message, color = MaterialTheme.colorScheme.error)
+                }
+            }
+            is AuthViewModel.LoginState.Success -> {
+                // Llamar onLoginSuccess una sola vez por éxito
+                LaunchedEffect(state.token) {
+                    onLoginSuccess(state.token)
+                }
+            }
+            else -> {}
         }
     }
 }

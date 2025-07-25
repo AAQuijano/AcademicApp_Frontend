@@ -6,10 +6,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.quijano.acdemicapp.network.Score
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.quijano.acdemicapp.network.ApiService
+import com.quijano.acdemicapp.network.Score
 import com.quijano.acdemicapp.viewmodel.ProfessorViewModel
+import com.quijano.acdemicapp.viewmodel.ViewModelFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -18,10 +21,16 @@ fun ProfessorHomeScreen(
     onCreateGrade: () -> Unit,
     onLogout: () -> Unit
 ) {
-    val viewModel = remember {
-        ProfessorViewModel(ApiService, professorId = "1")
+    val context = LocalContext.current
+    val factory = remember {
+        ViewModelFactory(
+            context = context,
+            apiService = ApiService,
+            userId = "1", // Idealmente se extrae del SessionManager o del JWT
+            role = "professor"
+        )
     }
-
+    val viewModel: ProfessorViewModel = viewModel(factory = factory)
     val scores by viewModel.scores.collectAsState()
 
     Scaffold(
@@ -29,7 +38,9 @@ fun ProfessorHomeScreen(
             TopAppBar(
                 title = { Text("Panel del Profesor") },
                 actions = {
-                    TextButton(onClick = onLogout) { Text("Salir") }
+                    TextButton(onClick = onLogout) {
+                        Text("Salir")
+                    }
                 }
             )
         },
@@ -55,9 +66,11 @@ fun ProfessorHomeScreen(
 
 @Composable
 fun ScoreCard(score: Score) {
-    Card(modifier = Modifier
-        .fillMaxWidth()
-        .padding(8.dp)) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+    ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text("Materia: ${score.subject}", style = MaterialTheme.typography.bodyLarge)
             Text("ID: ${score.id}")

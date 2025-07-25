@@ -2,15 +2,14 @@ package com.quijano.acdemicapp.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.quijano.acdemicapp.data.remote.local.JwtDecoder
 import com.quijano.acdemicapp.data.remote.local.SessionManager
 import com.quijano.acdemicapp.network.ApiService
 import com.quijano.acdemicapp.network.LoginRequest
 import com.quijano.acdemicapp.network.RegisterRequest
+import com.quijano.acdemicapp.utils.JwtDecoder
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import java.lang.Exception
 
 class AuthViewModel(
     private val apiService: ApiService,
@@ -24,31 +23,38 @@ class AuthViewModel(
     val registerState: StateFlow<RegisterState> = _registerState
 
     fun login(username: String, password: String) {
-        _loginState.value = LoginState.Loading
         viewModelScope.launch {
+            _loginState.value = LoginState.Loading
             try {
                 val response = apiService.login(LoginRequest(username, password))
-                val decodedToken = JwtDecoder.decode(response.access_token)
-                sessionManager.saveSession(
-                    token = response.access_token,
-                    userId = decodedToken["user_id"].toString(),
-                    role = decodedToken["role"].toString()
-                )
-                _loginState.value = LoginState.Success(response.access_token)
+                val token = response.access_token
+                val decoded = JwtDecoder.decode(token)
+
+                val userId = decoded["user_id"] ?: ""
+                val role = decoded["role"] ?: ""
+
+                sessionManager.saveSession(token, userId, role)
+                _loginState.value = LoginState.Success(token)
             } catch (e: Exception) {
-                _loginState.value = LoginState.Error(e.message ?: "Error desconocido")
+                _loginState.value = LoginState.Error(e.message ?: "Error al iniciar sesión")
             }
         }
     }
 
-    fun register(registerRequest: RegisterRequest) {
-        _registerState.value = RegisterState.Loading
+    fun register(fullName: String, username: String, email: String, password: String) {
         viewModelScope.launch {
+            _registerState.value = RegisterState.Loading
             try {
-                apiService.register(registerRequest)
+                val request = RegisterRequest(
+                    name_complete = fullName,
+                    name_user = username,
+                    email = email,
+                    password = password
+                )
+                apiService.register(request)
                 _registerState.value = RegisterState.Success
             } catch (e: Exception) {
-                _registerState.value = RegisterState.Error(e.message ?: "Error desconocido")
+                _registerState.value = RegisterState.Error(e.message ?: "Error al registrarse")
             }
         }
     }
@@ -56,6 +62,7 @@ class AuthViewModel(
     fun logout() {
         viewModelScope.launch {
             sessionManager.clearSession()
+            _loginState.value = LoginState.Idle
         }
     }
 
