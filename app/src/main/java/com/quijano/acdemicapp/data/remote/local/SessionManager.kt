@@ -9,7 +9,6 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-// Extensión para crear el DataStore (debe ser global)
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_session")
 
 class SessionManager(private val context: Context) {
@@ -21,12 +20,7 @@ class SessionManager(private val context: Context) {
         private val KEY_USERNAME = stringPreferencesKey("key_username")
     }
 
-    suspend fun saveUserSession(
-        token: String,
-        userId: String,
-        role: String,
-        username: String
-    ) {
+    suspend fun saveUserSession(token: String, userId: String, role: String, username: String) {
         context.dataStore.edit { preferences ->
             preferences[KEY_ACCESS_TOKEN] = token
             preferences[KEY_USER_ID] = userId
@@ -41,55 +35,27 @@ class SessionManager(private val context: Context) {
         }
     }
 
-    val accessToken: Flow<String?> = context.dataStore.data
-        .map { preferences ->
-            preferences[KEY_ACCESS_TOKEN]
-        }
-
-    val userId: Flow<String?> = context.dataStore.data
-        .map { preferences ->
-            preferences[KEY_USER_ID]
-        }
-
-    val userRole: Flow<String?> = context.dataStore.data
-        .map { preferences ->
-            preferences[KEY_USER_ROLE]
-        }
-
-    val username: Flow<String?> = context.dataStore.data
-        .map { preferences ->
-            preferences[KEY_USERNAME]
-        }
-
-    val isLoggedIn: Flow<Boolean> = context.dataStore.data
-        .map { preferences ->
-            !preferences[KEY_ACCESS_TOKEN].isNullOrEmpty()
-        }
-
-
-    fun decodeRoleFromToken(token: String): String? {
-        val payload = token.split(".").getOrNull(1) ?: return null
-        val decodedBytes = android.util.Base64.decode(payload, android.util.Base64.URL_SAFE)
-        val json = String(decodedBytes, Charsets.UTF_8)
-
-        // Usar expresión regular para extraer "role":"..."
-        val regex = Regex("\"role\"\\s*:\\s*\"(.*?)\"")
-        return regex.find(json)?.groupValues?.get(1)
-    }
-
+    // Alias para compatibilidad con AuthViewModel
     suspend fun saveSession(token: String, userId: String, role: String) {
-        context.dataStore.edit { prefs ->
-            prefs[KEY_ACCESS_TOKEN] = token
-            prefs[KEY_USER_ID] = userId
-            prefs[KEY_USER_ROLE] = role
-        }
+        saveUserSession(token = token, userId = userId, role = role, username = "")
     }
 
     suspend fun clearSession() {
-        context.dataStore.edit { prefs ->
-            prefs.clear()
-        }
+        clearUserSession()
     }
 
-}
+    val accessToken: Flow<String?> = context.dataStore.data
+        .map { preferences -> preferences[KEY_ACCESS_TOKEN] }
 
+    val userId: Flow<String?> = context.dataStore.data
+        .map { preferences -> preferences[KEY_USER_ID] }
+
+    val userRole: Flow<String?> = context.dataStore.data
+        .map { preferences -> preferences[KEY_USER_ROLE] }
+
+    val username: Flow<String?> = context.dataStore.data
+        .map { preferences -> preferences[KEY_USERNAME] }
+
+    val isLoggedIn: Flow<Boolean> = context.dataStore.data
+        .map { preferences -> !preferences[KEY_ACCESS_TOKEN].isNullOrEmpty() }
+}

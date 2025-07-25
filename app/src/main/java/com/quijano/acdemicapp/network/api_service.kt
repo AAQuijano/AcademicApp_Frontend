@@ -32,24 +32,30 @@ object ApiService {
         }
     }
 
-    suspend fun getStudentGrades(studentId: String): List<Grade> {
-        return client.get("$BASE_URL/calificaciones/student/$studentId").body()
+    suspend fun getStudentGrades(studentId: String, token: String): List<Grade> {
+        return client.get("$BASE_URL/calificaciones/student/$studentId") {
+            headers { append(HttpHeaders.Authorization, "Bearer $token") }
+        }.body()
     }
 
-    suspend fun getProfessorScores(professorId: String): List<Score> {
-        return client.get("$BASE_URL/scores/professor/$professorId").body()
+    suspend fun getProfessorScores(professorId: String, token: String): List<Score> {
+        return client.get("$BASE_URL/scores/professor/$professorId") {
+            headers { append(HttpHeaders.Authorization, "Bearer $token") }
+        }.body()
     }
 
-    suspend fun createScore(scoreRequest: ScoreRequest) {
+    suspend fun createScore(scoreRequest: ScoreRequest, token: String) {
         client.post("$BASE_URL/scores") {
             contentType(ContentType.Application.Json)
+            headers { append(HttpHeaders.Authorization, "Bearer $token") }
             setBody(scoreRequest)
         }
     }
 
-    suspend fun createGrade(gradeRequest: GradeRequest) {
+    suspend fun createGrade(gradeRequest: GradeRequest, token: String) {
         client.post("$BASE_URL/calificaciones") {
             contentType(ContentType.Application.Json)
+            headers { append(HttpHeaders.Authorization, "Bearer $token") }
             setBody(gradeRequest)
         }
     }

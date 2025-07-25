@@ -18,20 +18,26 @@ fun AppNavigation() {
     val context = LocalContext.current
     val sessionManager = remember { SessionManager(context) }
 
+    val currentToken by sessionManager.accessToken.collectAsState(initial = null)
     val currentRole by sessionManager.userRole.collectAsState(initial = null)
 
-    NavHost(navController = navController, startDestination = "login") {
+    val startDestination = when {
+        !currentToken.isNullOrBlank() && currentRole == "student" -> "student_home"
+        !currentToken.isNullOrBlank() && currentRole == "professor" -> "professor_home"
+        else -> "login"
+    }
+
+    NavHost(navController = navController, startDestination = startDestination) {
 
         composable("login") {
             LoginScreen(
                 onLoginSuccess = { token ->
                     coroutineScope.launch {
                         val role = decodeRoleFromToken(token) ?: "unknown"
-                        sessionManager.saveUserSession(
+                        sessionManager.saveSession(
                             token = token,
-                            userId = "", // puedes extraerlo si el JWT lo tiene
-                            role = role,
-                            username = ""
+                            userId = "", // opcional: extraer del JWT
+                            role = role
                         )
 
                         when (role) {
@@ -66,7 +72,7 @@ fun AppNavigation() {
             StudentHomeScreen(
                 onLogout = {
                     coroutineScope.launch {
-                        sessionManager.clearUserSession()
+                        sessionManager.clearSession()
                         navController.navigate("login") {
                             popUpTo("student_home") { inclusive = true }
                         }
@@ -77,11 +83,11 @@ fun AppNavigation() {
 
         composable("professor_home") {
             ProfessorHomeScreen(
-                onCreateScore = { /* implementar */ },
-                onCreateGrade = { /* implementar */ },
+                onCreateScore = { /* TODO */ },
+                onCreateGrade = { /* TODO */ },
                 onLogout = {
                     coroutineScope.launch {
-                        sessionManager.clearUserSession()
+                        sessionManager.clearSession()
                         navController.navigate("login") {
                             popUpTo("professor_home") { inclusive = true }
                         }
@@ -92,9 +98,6 @@ fun AppNavigation() {
     }
 }
 
-/**
- * Decodifica el token JWT y extrae el campo "role" del payload.
- */
 fun decodeRoleFromToken(token: String): String? {
     return try {
         val parts = token.split(".")
