@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="Gradle: androidx.navigation:navigation-compose-jvmstubs:2.9.2" type="java-imported" external-system-id="GRADLE">
+    <properties groupId="androidx.navigation" artifactId="navigation-compose-jvmstubs" version="2.9.2" baseVersion="2.9.2" />
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/androidx.navigation/navigation-compose-jvmstubs/2.9.2/63a0fb4c6ed0b058ca7d7be47fc3e11360277d71/navigation-compose-jvmstubs-2.9.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/androidx.navigation/navigation-compose-jvmstubs/2.9.2/20c504a8c34f9990dd19d8fc72e8e9028bba120b/navigation-compose-jvmstubs-2.9.2-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
