@@ -75,5 +75,5 @@ Se conecta a un backend FastAPI desplegado en EC2:
 
 ---
 
-##Estado del frontend: Incompleto
+## Estado del frontend: Incompleto
 
