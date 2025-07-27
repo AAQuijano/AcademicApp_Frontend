@@ -77,4 +77,4 @@ Se conecta a un backend FastAPI desplegado en EC2:
 
 ## 🧠 Autor
 
-Desarrollado por **Antonio Quijano** como proyecto académico de ingeniería de software.
+Desarrollado por **Antonio Quijano** 
