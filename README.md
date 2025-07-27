@@ -73,4 +73,7 @@ Se conecta a un backend FastAPI desplegado en EC2:
 - Endpoint base configurado en `ApiConfig.kt`
 - Autenticación JWT incluida en todos los requests protegidos
 
+---
+
+##Estado del frontend: Incompleto
 
